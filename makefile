@@ -1,2 +1,7 @@
+GOCACHE ?= $(CURDIR)/.cache/go-build
+
 run:
-	go run main.go
+	GOCACHE=$(GOCACHE) go run main.go
+
+test:
+	GOCACHE=$(GOCACHE) go test ./...
