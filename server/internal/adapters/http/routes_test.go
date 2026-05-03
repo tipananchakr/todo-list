@@ -132,6 +132,37 @@ func TestCompleteTodoRouteReturnsBadRequestForInvalidID(t *testing.T) {
 	}
 }
 
+func TestDeleteTodoRouteUsesDeleteRepository(t *testing.T) {
+	repository := &testTodoRepository{}
+	app := newTestApp(repository, newTestAuthService())
+
+	response := testAuthenticatedRequest(t, app, "DELETE", "/api/todos/6636d3d046b1b2dd3b46e001", "")
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected status %d, got %d", fiber.StatusOK, response.StatusCode)
+	}
+
+	if repository.deletedID != "6636d3d046b1b2dd3b46e001" {
+		t.Fatalf("expected repository to delete todo id, got %q", repository.deletedID)
+	}
+
+	if repository.completedID != "" {
+		t.Fatalf("expected delete route not to mark todo completed, got completed id %q", repository.completedID)
+	}
+}
+
+func TestDeleteTodoRouteReturnsBadRequestForInvalidID(t *testing.T) {
+	app := newTestApp(&testTodoRepository{deleteError: domain.ErrInvalidTodoID}, newTestAuthService())
+
+	response := testAuthenticatedRequest(t, app, "DELETE", "/api/todos/invalid-id", "")
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", fiber.StatusBadRequest, response.StatusCode)
+	}
+}
+
 func TestRegisterRoute(t *testing.T) {
 	app := newTestApp(&testTodoRepository{}, newTestAuthService())
 
@@ -239,7 +270,10 @@ func testAuthenticatedRequest(t *testing.T, app *fiber.App, method string, targe
 
 type testTodoRepository struct {
 	markCompletedError error
+	deleteError        error
 	findUserID         string
+	completedID        string
+	deletedID          string
 }
 
 func (r *testTodoRepository) FindAllByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
@@ -255,11 +289,13 @@ func (r *testTodoRepository) Create(ctx context.Context, todo domain.Todo) (doma
 }
 
 func (r *testTodoRepository) MarkCompleted(ctx context.Context, userID string, id string) error {
+	r.completedID = id
 	return r.markCompletedError
 }
 
 func (r *testTodoRepository) Delete(ctx context.Context, userID string, id string) error {
-	return nil
+	r.deletedID = id
+	return r.deleteError
 }
 
 func newTestAuthService() *application.AuthService {

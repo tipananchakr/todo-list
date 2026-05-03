@@ -5,6 +5,7 @@ export interface Todo {
   userId: string;
   completed: boolean;
   body: string;
+  isDeleted: boolean;
 }
 
 const authHeaders = (token: string) => ({
@@ -28,7 +29,9 @@ export const createTodo = async ({ token, body }: { token: string; body: string 
       "Content-Type": "application/json",
       ...authHeaders(token),
     },
-    body: JSON.stringify({ body }),
+    body: JSON.stringify({ 
+      body: body,
+    }),
   });
 
   if (!res.ok) throw new Error("failed to create todo");

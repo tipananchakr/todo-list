@@ -9,7 +9,7 @@ const TodoList = () => {
 
   if (isLoading) return <Text color="fg.muted">Loading...</Text>;
   if (error) return <Text color="red.500">Cannot load todos</Text>;
-  if (!data?.length) return <Text color="fg.muted">No todos yet.</Text>;
+  if (!data?.length) return <Text color="fg.muted" textAlign={"center"}>No todos yet.</Text>;
 
   return (
     <Stack as="ul" gap={3} p={0} listStyleType="none">

@@ -36,6 +36,7 @@ func (s *TodoService) CreateTodo(ctx context.Context, userID string, body string
 		UserID:    userID,
 		Body:      strings.TrimSpace(body),
 		Completed: false,
+		IsDeleted: false,
 	}
 
 	return s.repository.Create(ctx, todo)

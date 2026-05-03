@@ -15,6 +15,7 @@ type todoDocument struct {
 	UserID    string             `bson:"userId"`
 	Completed bool               `bson:"completed"`
 	Body      string             `bson:"body"`
+	IsDeleted bool               `bson:"is_deleted"`
 }
 
 type TodoRepository struct {
@@ -26,7 +27,7 @@ func NewTodoRepository(collection *mongo.Collection) *TodoRepository {
 }
 
 func (r *TodoRepository) FindAllByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
-	cursor, err := r.collection.Find(ctx, bson.M{"userId": userID})
+	cursor, err := r.collection.Find(ctx, bson.M{"userId": userID, "is_deleted": bson.M{"$ne": true}})
 	if err != nil {
 		return nil, fmt.Errorf("find todos: %w", err)
 	}
@@ -88,7 +89,10 @@ func (r *TodoRepository) Delete(ctx context.Context, userID string, id string) e
 		return domain.ErrInvalidTodoID
 	}
 
-	if _, err := r.collection.DeleteOne(ctx, bson.M{"_id": objectID, "userId": userID}); err != nil {
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID, "userId": userID}, bson.M{
+		"$set": bson.M{"is_deleted": true},
+	})
+	if err != nil {
 		return fmt.Errorf("delete todo: %w", err)
 	}
 
@@ -101,5 +105,6 @@ func (d todoDocument) toDomain() domain.Todo {
 		UserID:    d.UserID,
 		Completed: d.Completed,
 		Body:      d.Body,
+		IsDeleted: d.IsDeleted,
 	}
 }

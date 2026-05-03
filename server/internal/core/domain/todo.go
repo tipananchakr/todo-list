@@ -5,4 +5,5 @@ type Todo struct {
 	UserID    string `json:"userId,omitempty"`
 	Completed bool   `json:"completed"`
 	Body      string `json:"body"`
+	IsDeleted bool   `json:"isDeleted"`
 }

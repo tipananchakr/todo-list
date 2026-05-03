@@ -271,6 +271,9 @@ components:
         body:
           type: string
           example: Learn hexagonal architecture
+        isDeleted:
+          type: boolean
+          example: false
     CreateTodoRequest:
       type: object
       required:
