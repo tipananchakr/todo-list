@@ -12,12 +12,12 @@ func TestAuthServiceRegisterCreatesUserAndToken(t *testing.T) {
 	users := newFakeUserRepository()
 	service := NewAuthService(users, fakePasswordHasher{}, fakeTokenManager{})
 
-	result, err := service.Register(context.Background(), " USER@example.com ", "secret123")
+	result, err := service.Register(context.Background(), " NEW@example.com ", "secret123")
 	if err != nil {
 		t.Fatalf("Register returned error: %v", err)
 	}
 
-	if result.User.Email != "user@example.com" {
+	if result.User.Email != "new@example.com" {
 		t.Fatalf("expected normalized email, got %q", result.User.Email)
 	}
 

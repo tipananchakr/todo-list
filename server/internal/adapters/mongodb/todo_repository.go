@@ -12,6 +12,7 @@ import (
 
 type todoDocument struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	UserID    string             `bson:"userId"`
 	Completed bool               `bson:"completed"`
 	Body      string             `bson:"body"`
 }
@@ -24,8 +25,8 @@ func NewTodoRepository(collection *mongo.Collection) *TodoRepository {
 	return &TodoRepository{collection: collection}
 }
 
-func (r *TodoRepository) FindAll(ctx context.Context) ([]domain.Todo, error) {
-	cursor, err := r.collection.Find(ctx, bson.M{})
+func (r *TodoRepository) FindAllByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
+	cursor, err := r.collection.Find(ctx, bson.M{"userId": userID})
 	if err != nil {
 		return nil, fmt.Errorf("find todos: %w", err)
 	}
@@ -46,6 +47,7 @@ func (r *TodoRepository) FindAll(ctx context.Context) ([]domain.Todo, error) {
 
 func (r *TodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.Todo, error) {
 	document := todoDocument{
+		UserID:    todo.UserID,
 		Body:      todo.Body,
 		Completed: todo.Completed,
 	}
@@ -64,13 +66,13 @@ func (r *TodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.T
 	return document.toDomain(), nil
 }
 
-func (r *TodoRepository) MarkCompleted(ctx context.Context, id string) error {
+func (r *TodoRepository) MarkCompleted(ctx context.Context, userID string, id string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return domain.ErrInvalidTodoID
 	}
 
-	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID}, bson.M{
+	_, err = r.collection.UpdateOne(ctx, bson.M{"_id": objectID, "userId": userID}, bson.M{
 		"$set": bson.M{"completed": true},
 	})
 	if err != nil {
@@ -80,13 +82,13 @@ func (r *TodoRepository) MarkCompleted(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *TodoRepository) Delete(ctx context.Context, id string) error {
+func (r *TodoRepository) Delete(ctx context.Context, userID string, id string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return domain.ErrInvalidTodoID
 	}
 
-	if _, err := r.collection.DeleteOne(ctx, bson.M{"_id": objectID}); err != nil {
+	if _, err := r.collection.DeleteOne(ctx, bson.M{"_id": objectID, "userId": userID}); err != nil {
 		return fmt.Errorf("delete todo: %w", err)
 	}
 
@@ -96,6 +98,7 @@ func (r *TodoRepository) Delete(ctx context.Context, id string) error {
 func (d todoDocument) toDomain() domain.Todo {
 	return domain.Todo{
 		ID:        d.ID.Hex(),
+		UserID:    d.UserID,
 		Completed: d.Completed,
 		Body:      d.Body,
 	}

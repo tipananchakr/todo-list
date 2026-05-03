@@ -73,7 +73,7 @@ func TestOpenAPIRoute(t *testing.T) {
 func TestCreateTodoRoute(t *testing.T) {
 	app := newTestApp(&testTodoRepository{}, newTestAuthService())
 
-	response := testRequest(t, app, "POST", "/api/todos", `{"body":" Write tests "}`)
+	response := testAuthenticatedRequest(t, app, "POST", "/api/todos", `{"body":" Write tests "}`)
 	defer response.Body.Close()
 
 	if response.StatusCode != fiber.StatusCreated {
@@ -88,12 +88,43 @@ func TestCreateTodoRoute(t *testing.T) {
 	if todo.Body != "Write tests" {
 		t.Fatalf("expected trimmed body, got %q", todo.Body)
 	}
+
+	if todo.UserID != "user-1" {
+		t.Fatalf("expected user todo, got user id %q", todo.UserID)
+	}
+}
+
+func TestTodoRoutesRequireBearerToken(t *testing.T) {
+	app := newTestApp(&testTodoRepository{}, newTestAuthService())
+
+	response := testRequest(t, app, "GET", "/api/todos", "")
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", fiber.StatusUnauthorized, response.StatusCode)
+	}
+}
+
+func TestGetTodosRouteUsesCurrentUser(t *testing.T) {
+	repository := &testTodoRepository{}
+	app := newTestApp(repository, newTestAuthService())
+
+	response := testAuthenticatedRequest(t, app, "GET", "/api/todos", "")
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusOK {
+		t.Fatalf("expected status %d, got %d", fiber.StatusOK, response.StatusCode)
+	}
+
+	if repository.findUserID != "user-1" {
+		t.Fatalf("expected repository to find todos for user, got %q", repository.findUserID)
+	}
 }
 
 func TestCompleteTodoRouteReturnsBadRequestForInvalidID(t *testing.T) {
 	app := newTestApp(&testTodoRepository{markCompletedError: domain.ErrInvalidTodoID}, newTestAuthService())
 
-	response := testRequest(t, app, "PATCH", "/api/todos/invalid-id", "")
+	response := testAuthenticatedRequest(t, app, "PATCH", "/api/todos/invalid-id", "")
 	defer response.Body.Close()
 
 	if response.StatusCode != fiber.StatusBadRequest {
@@ -104,7 +135,7 @@ func TestCompleteTodoRouteReturnsBadRequestForInvalidID(t *testing.T) {
 func TestRegisterRoute(t *testing.T) {
 	app := newTestApp(&testTodoRepository{}, newTestAuthService())
 
-	response := testRequest(t, app, "POST", "/api/auth/register", `{"email":"Test@Example.com","password":"secret123"}`)
+	response := testRequest(t, app, "POST", "/api/auth/register", `{"email":"New@Example.com","password":"secret123"}`)
 	defer response.Body.Close()
 
 	if response.StatusCode != fiber.StatusCreated {
@@ -116,7 +147,7 @@ func TestRegisterRoute(t *testing.T) {
 		t.Fatalf("decode response body: %v", err)
 	}
 
-	if result.User.Email != "test@example.com" {
+	if result.User.Email != "new@example.com" {
 		t.Fatalf("expected normalized email, got %q", result.User.Email)
 	}
 
@@ -189,13 +220,32 @@ func testRequest(t *testing.T, app *fiber.App, method string, target string, bod
 	return response
 }
 
-type testTodoRepository struct {
-	markCompletedError error
+func testAuthenticatedRequest(t *testing.T, app *fiber.App, method string, target string, body string) *nethttp.Response {
+	t.Helper()
+
+	request := httptest.NewRequest(method, target, strings.NewReader(body))
+	request.Header.Set(fiber.HeaderAuthorization, "Bearer token-user-1")
+	if body != "" {
+		request.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+	}
+
+	response, err := app.Test(request)
+	if err != nil {
+		t.Fatalf("test request: %v", err)
+	}
+
+	return response
 }
 
-func (r *testTodoRepository) FindAll(ctx context.Context) ([]domain.Todo, error) {
+type testTodoRepository struct {
+	markCompletedError error
+	findUserID         string
+}
+
+func (r *testTodoRepository) FindAllByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
+	r.findUserID = userID
 	return []domain.Todo{
-		{ID: "6636d3d046b1b2dd3b46e001", Body: "Write docs", Completed: false},
+		{ID: "6636d3d046b1b2dd3b46e001", UserID: userID, Body: "Write docs", Completed: false},
 	}, nil
 }
 
@@ -204,11 +254,11 @@ func (r *testTodoRepository) Create(ctx context.Context, todo domain.Todo) (doma
 	return todo, nil
 }
 
-func (r *testTodoRepository) MarkCompleted(ctx context.Context, id string) error {
+func (r *testTodoRepository) MarkCompleted(ctx context.Context, userID string, id string) error {
 	return r.markCompletedError
 }
 
-func (r *testTodoRepository) Delete(ctx context.Context, id string) error {
+func (r *testTodoRepository) Delete(ctx context.Context, userID string, id string) error {
 	return nil
 }
 

@@ -1,6 +1,7 @@
 import { Button, Field, Input, Stack } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useCreateTodo } from "../hook/useCreateTodo";
+import { toaster } from "@/components/ui/toaster";
 
 interface FormData {
   body: string;
@@ -17,8 +18,16 @@ const TodoForm = () => {
   } = useForm<FormData>()
 
   const onSubmit = handleSubmit((data) => {
-    mutation.mutate(data);
-    reset()
+    mutation.mutate(data, {
+      onSuccess: () => reset(),
+      onError: (error) => {
+        toaster.create({
+          title: "Cannot create todo",
+          description: error instanceof Error ? error.message : "Please try again",
+          type: "error",
+        });
+      },
+    });
   })
 
   return (
@@ -27,6 +36,7 @@ const TodoForm = () => {
         <Field.Root invalid={!!errors.body} w={"100%"}>
           <Input 
             type="text" 
+            placeholder="Add a task"
             {...register("body", {
               required: "This field is required",
               minLength: {
@@ -42,6 +52,7 @@ const TodoForm = () => {
         <Button 
           type="submit" 
           disabled={!isValid || mutation.isPending}
+          loading={mutation.isPending}
         >
           Add
         </Button>

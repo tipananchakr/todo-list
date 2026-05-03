@@ -1,24 +1,35 @@
-# Todo List API
+# Todo List
 
-Todo List API is a Go REST service built with Fiber and MongoDB. The project uses hexagonal architecture and feature-based adapters so new features such as auth, todos, notifications, or payments can be added without mixing HTTP, database, and business logic in one place.
+Todo List is a full-stack app with a React/Vite client and a Go REST API built with Fiber and MongoDB. The server uses hexagonal architecture and feature-based adapters so auth and todo behavior stay separated from HTTP, database, and security implementations.
 
-## Features
+## Structure
+
+```text
+.
+├── client        # React + TypeScript + Vite frontend
+├── server        # Go Fiber API, MongoDB repositories, OpenAPI docs
+├── makefile      # Root commands for server and client workflows
+└── README.md
+```
+
+## App Features
 
 - Health check endpoint
 - User registration with bcrypt password hashing
 - User login with HMAC signed JWT access tokens
 - Authenticated current-user endpoint
-- List all todos
-- Create a todo
+- List user todos
+- Create user todos
 - Mark a todo as completed
 - Delete a todo
-- Swagger UI at `/swagger`
-- OpenAPI YAML at `/docs/openapi.yaml`
+- React client with login, register, logout, and todo CRUD
+- Server Swagger UI at `/swagger`
+- Server OpenAPI YAML at `/docs/openapi.yaml`
 
-## Architecture
+## Server Architecture
 
 ```text
-.
+server
 ├── main.go                         # Application composition root
 ├── internal
 │   ├── application                 # Feature use cases / application services
@@ -41,16 +52,18 @@ The dependency direction is:
 HTTP / MongoDB / Security adapters -> application services -> core ports and domain
 ```
 
-To add a new feature, add its domain model and port in `internal/core`, its use case in `internal/application`, and its external implementations in `internal/adapters`.
+To add a new server feature, add its domain model and port in `server/internal/core`, its use case in `server/internal/application`, and its external implementations in `server/internal/adapters`.
 
 ## Requirements
 
 - Go 1.25.4 or compatible
 - MongoDB database or MongoDB Atlas cluster
+- Node.js 20 or compatible
+- npm
 
-## Environment
+## Server Environment
 
-Create a `.env` file in the project root:
+Create `server/.env`:
 
 ```env
 PORT=3000
@@ -71,38 +84,52 @@ Defaults:
 
 ## Run
 
-Install dependencies:
+Install server dependencies:
 
 ```bash
+cd server
 go mod download
+cd ..
 ```
 
-Start the API:
-
-```bash
-go run main.go
-```
-
-Or use make:
+Start the API from the project root:
 
 ```bash
 make run
 ```
 
-The API runs on `http://localhost:3000` by default.
+Install client dependencies:
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+Start the client from the project root:
+
+```bash
+make client-dev
+```
+
+Defaults:
+
+- API: `http://localhost:3000`
+- Client: `http://localhost:5173`
 
 ## Test
 
-Run all tests:
-
-```bash
-go test ./...
-```
-
-Or use make:
+Run server tests:
 
 ```bash
 make test
+```
+
+Run client checks:
+
+```bash
+make client-lint
+make client-build
 ```
 
 ## Swagger
@@ -122,5 +149,5 @@ http://localhost:3000/docs/openapi.yaml
 The OpenAPI document is also available in the repository at:
 
 ```text
-docs/openapi.yaml
+server/docs/openapi.yaml
 ```

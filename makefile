@@ -1,7 +1,17 @@
+SERVER_DIR := server
 GOCACHE ?= $(CURDIR)/.cache/go-build
 
 run:
-	GOCACHE=$(GOCACHE) go run main.go
+	cd $(SERVER_DIR) && GOCACHE=$(GOCACHE) go run main.go
 
 test:
-	GOCACHE=$(GOCACHE) go test ./...
+	cd $(SERVER_DIR) && GOCACHE=$(GOCACHE) go test ./...
+
+client-dev:
+	cd client && npm run dev
+
+client-build:
+	cd client && npm run build
+
+client-lint:
+	cd client && npm run lint

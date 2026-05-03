@@ -30,7 +30,7 @@ func RegisterRoutes(app *fiber.App, services Services) {
 
 	api := app.Group("/api")
 	registerAuthRoutes(api.Group("/auth"), services.Auth)
-	registerTodoRoutes(api.Group("/todos"), services.Todo)
+	registerTodoRoutes(api.Group("/todos"), services.Todo, services.Auth)
 }
 
 func health(c *fiber.Ctx) error {

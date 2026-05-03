@@ -21,18 +21,19 @@ func NewTodoService(repository ports.TodoRepository) *TodoService {
 	}
 }
 
-func (s *TodoService) GetTodos(ctx context.Context) ([]domain.Todo, error) {
+func (s *TodoService) GetTodos(ctx context.Context, userID string) ([]domain.Todo, error) {
 	ctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
-	return s.repository.FindAll(ctx)
+	return s.repository.FindAllByUser(ctx, userID)
 }
 
-func (s *TodoService) CreateTodo(ctx context.Context, body string) (domain.Todo, error) {
+func (s *TodoService) CreateTodo(ctx context.Context, userID string, body string) (domain.Todo, error) {
 	ctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
 	todo := domain.Todo{
+		UserID:    userID,
 		Body:      strings.TrimSpace(body),
 		Completed: false,
 	}
@@ -40,16 +41,16 @@ func (s *TodoService) CreateTodo(ctx context.Context, body string) (domain.Todo,
 	return s.repository.Create(ctx, todo)
 }
 
-func (s *TodoService) CompleteTodo(ctx context.Context, id string) error {
+func (s *TodoService) CompleteTodo(ctx context.Context, userID string, id string) error {
 	ctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
-	return s.repository.MarkCompleted(ctx, id)
+	return s.repository.MarkCompleted(ctx, userID, id)
 }
 
-func (s *TodoService) DeleteTodo(ctx context.Context, id string) error {
+func (s *TodoService) DeleteTodo(ctx context.Context, userID string, id string) error {
 	ctx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 
-	return s.repository.Delete(ctx, id)
+	return s.repository.Delete(ctx, userID, id)
 }

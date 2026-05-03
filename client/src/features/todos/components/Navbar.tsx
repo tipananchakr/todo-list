@@ -1,10 +1,12 @@
-import { Box, Flex, Button, Text, Container } from "@chakra-ui/react";
+import { Box, Flex, Button, Text } from "@chakra-ui/react";
 import { IoMoon } from "react-icons/io5";
 import { LuSun } from "react-icons/lu";
 import { useColorMode, useColorModeValue } from "../../../components/ui/color-mode";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export default function Navbar() {
 	const { colorMode, toggleColorMode } = useColorMode();
+	const { user, logout } = useAuth();
 
 	return (
 		<div >
@@ -24,11 +26,21 @@ export default function Navbar() {
 
 					{/* RIGHT SIDE */}
 					<Flex alignItems={"center"} gap={3}>
+						{user && (
+							<Text fontSize="sm" color="fg.muted" display={{ base: "none", md: "block" }}>
+								{user.email}
+							</Text>
+						)}
 						
 						{/* Toggle Color Mode */}
 						<Button onClick={toggleColorMode}>
 							{colorMode === "light" ? <IoMoon /> : <LuSun size={20} />}
 						</Button>
+						{user && (
+							<Button variant="outline" onClick={logout}>
+								Logout
+							</Button>
+						)}
 					</Flex>
 				</Flex>
 			</Box>
