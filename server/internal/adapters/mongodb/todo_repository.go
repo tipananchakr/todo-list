@@ -10,14 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type todoDocument struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	UserID    string             `bson:"userId"`
-	Completed bool               `bson:"completed"`
-	Body      string             `bson:"body"`
-	IsDeleted bool               `bson:"is_deleted"`
-}
-
 type TodoRepository struct {
 	collection *mongo.Collection
 }
@@ -33,21 +25,21 @@ func (r *TodoRepository) FindAllByUser(ctx context.Context, userID string) ([]do
 	}
 	defer cursor.Close(ctx)
 
-	var documents []todoDocument
+	var documents []domain.Todo
 	if err := cursor.All(ctx, &documents); err != nil {
 		return nil, fmt.Errorf("decode todos: %w", err)
 	}
 
 	todos := make([]domain.Todo, 0, len(documents))
 	for _, document := range documents {
-		todos = append(todos, document.toDomain())
+		todos = append(todos, document)
 	}
 
 	return todos, nil
 }
 
 func (r *TodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.Todo, error) {
-	document := todoDocument{
+	document := domain.Todo{
 		UserID:    todo.UserID,
 		Body:      todo.Body,
 		Completed: todo.Completed,
@@ -64,7 +56,7 @@ func (r *TodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.T
 	}
 
 	document.ID = insertedID
-	return document.toDomain(), nil
+	return document, nil
 }
 
 func (r *TodoRepository) MarkCompleted(ctx context.Context, userID string, id string) error {
@@ -97,14 +89,4 @@ func (r *TodoRepository) Delete(ctx context.Context, userID string, id string) e
 	}
 
 	return nil
-}
-
-func (d todoDocument) toDomain() domain.Todo {
-	return domain.Todo{
-		ID:        d.ID.Hex(),
-		UserID:    d.UserID,
-		Completed: d.Completed,
-		Body:      d.Body,
-		IsDeleted: d.IsDeleted,
-	}
 }

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/tipananchakr/todo-list/internal/application"
 	"github.com/tipananchakr/todo-list/internal/core/domain"
@@ -279,12 +280,12 @@ type testTodoRepository struct {
 func (r *testTodoRepository) FindAllByUser(ctx context.Context, userID string) ([]domain.Todo, error) {
 	r.findUserID = userID
 	return []domain.Todo{
-		{ID: "6636d3d046b1b2dd3b46e001", UserID: userID, Body: "Write docs", Completed: false},
+		{ID: primitive.NewObjectID(), UserID: userID, Body: "Write docs", Completed: false},
 	}, nil
 }
 
 func (r *testTodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.Todo, error) {
-	todo.ID = "6636d3d046b1b2dd3b46e002"
+	todo.ID = primitive.NewObjectID()
 	return todo, nil
 }
 

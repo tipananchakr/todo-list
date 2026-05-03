@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/tipananchakr/todo-list/internal/core/domain"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestTodoServiceCreateTodoTrimsBodyAndDefaultsIncomplete(t *testing.T) {
@@ -56,7 +57,7 @@ func (r *fakeTodoRepository) FindAllByUser(ctx context.Context, userID string) (
 }
 
 func (r *fakeTodoRepository) Create(ctx context.Context, todo domain.Todo) (domain.Todo, error) {
-	todo.ID = "6636d3d046b1b2dd3b46e001"
+	todo.ID = primitive.NewObjectID()
 	return todo, nil
 }
 
