@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/tipananchakr/todo-list/internal/adapters/http"
@@ -46,6 +47,7 @@ func main() {
 
 	app := fiber.New()
 	app.Use(logger.New())
+	app.Use(cors.New())
 
 	http.RegisterRoutes(app, http.Services{
 		Auth: authService,
