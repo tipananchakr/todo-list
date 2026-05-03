@@ -25,14 +25,9 @@ func (r *TodoRepository) FindAllByUser(ctx context.Context, userID string) ([]do
 	}
 	defer cursor.Close(ctx)
 
-	var documents []domain.Todo
-	if err := cursor.All(ctx, &documents); err != nil {
+	var todos []domain.Todo
+	if err := cursor.All(ctx, &todos); err != nil {
 		return nil, fmt.Errorf("decode todos: %w", err)
-	}
-
-	todos := make([]domain.Todo, 0, len(documents))
-	for _, document := range documents {
-		todos = append(todos, document)
 	}
 
 	return todos, nil
